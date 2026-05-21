@@ -16,7 +16,7 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    return { error: 'Correo o contraseña incorrectos. Por favor, verifica tus datos.' }
+    redirect('/login?error=incorrecto')
   }
 
   revalidatePath('/', 'layout')
@@ -39,7 +39,7 @@ export async function signup(formData: FormData) {
 
   // Validación básica
   if (!email || !password || !nombre || !rol) {
-    return { error: 'Por favor, llena todos los campos obligatorios.' }
+    redirect('/registro?error=campos')
   }
 
   const { error } = await supabase.auth.signUp({
@@ -59,7 +59,7 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    return { error: error.message }
+    redirect('/registro?error=sistema')
   }
 
   revalidatePath('/', 'layout')
