@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 const navLinks = [
   { name: "Funciones", href: "/tutoriales" },
@@ -18,11 +19,26 @@ export function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    // Supabase auth listener
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   return (
@@ -77,9 +93,15 @@ export function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/suscripcion" className="text-[14px] font-medium text-[#6b7280] hover:text-[#0d0d0d] transition-colors px-2">
-              Iniciar sesión
-            </Link>
+            {user ? (
+              <Link href="/dashboard" className="text-[14px] font-medium text-[#6b7280] hover:text-[#0d0d0d] transition-colors px-2">
+                Mi Panel
+              </Link>
+            ) : (
+              <Link href="/login" className="text-[14px] font-medium text-[#6b7280] hover:text-[#0d0d0d] transition-colors px-2">
+                Iniciar sesión
+              </Link>
+            )}
             <Link href="/descarga" className="btn-primary text-[14px] py-2.5 px-5">
               Descargar gratis
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -116,9 +138,15 @@ export function Navbar() {
             </Link>
           ))}
           <div className="mt-4 pt-4 border-t border-black/5 flex flex-col gap-3">
-            <Link href="/suscripcion" onClick={() => setIsOpen(false)} className="btn-ghost py-3 justify-center">
-              Iniciar sesión
-            </Link>
+            {user ? (
+              <Link href="/dashboard" onClick={() => setIsOpen(false)} className="btn-ghost py-3 justify-center">
+                Mi Panel
+              </Link>
+            ) : (
+              <Link href="/login" onClick={() => setIsOpen(false)} className="btn-ghost py-3 justify-center">
+                Iniciar sesión
+              </Link>
+            )}
             <Link href="/descarga" onClick={() => setIsOpen(false)} className="btn-primary py-3 justify-center">
               Descargar gratis
             </Link>
